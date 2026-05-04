@@ -1,0 +1,18 @@
+# CatBoost logs
+catboost_info/
+*.json
+*.tsv
+
+# Envs
+ML_venv/
+venv/
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+Untitled*.ipynb
+nt.ipynb
