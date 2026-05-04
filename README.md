@@ -11,6 +11,3 @@ Este proyecto desarrolla un modelo de clasificacion con CatBoost para predecir e
 * data/: Dataset original
 * notebooks/: EDA y Entrenamiento
 * app/: API y Modelo guardado (joblib)
-
-## Autor
-* Paula Gomez Vargas
