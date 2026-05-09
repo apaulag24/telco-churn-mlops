@@ -60,6 +60,6 @@ project:
 
 site:
   template: book-theme
-  # github: https://github.com/cjarango/Cardiovascular-Risk-MLOps
+  github: https://github.com/apaulag24/telco-churn-mlops.git
   options:
     style: custom.css
