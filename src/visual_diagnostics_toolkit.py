@@ -33,13 +33,17 @@ This affects:
 
 Dependencies
 ------------
-    pip install scikit-learn pandas numpy matplotlib seaborn
+    pip install scikit-learn pandas numpy matplotlib seaborn lime
 
 Functions
 ---------
 Feature Importance
     plot_permutation_importance
         Permutation-based feature importance with 95% confidence intervals.
+
+Local Explanations
+    plot_lime_explanation
+        Local feature importance for a single instance using LIME.
 
 Diagnostics
     plot_confusion_matrix
@@ -49,12 +53,19 @@ Notes
 -----
 - All visual outputs are optimised for **academic publication**.
 - Designed to integrate seamlessly with the modeling pipeline.
+
+Changelog
+---------
+v2.0.0
+    - Added ``plot_lime_explanation`` for per-instance LIME-based explanations.
+    - Added ``_SECONDARY_RED`` global colour constant for negative LIME weights.
+    - Expanded ``__all__`` to include the new function.
 """
 
 # ---------------------------------------------------------------------------
 # Metadata
 # ---------------------------------------------------------------------------
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 
 __author__ = (
     "Paula Andrea Gómez Vargas <apaulag@uninorte.edu.co>, "
@@ -68,18 +79,13 @@ __author__ = (
 # ---------------------------------------------------------------------------
 __all__ = [
     "plot_permutation_importance",
+    "plot_lime_explanation",
     "plot_confusion_matrix",
 ]
 
-# ---------------------------------------------------------------------------
-# Standard library
-# ---------------------------------------------------------------------------
+
 import io
 import base64
-
-# ---------------------------------------------------------------------------
-# Third-party
-# ---------------------------------------------------------------------------
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -90,7 +96,8 @@ from IPython.display import display, HTML
 # ---------------------------------------------------------------------------
 # Global styling
 # ---------------------------------------------------------------------------
-_PRIMARY_BLUE = "#4C72B0"
+_PRIMARY_BLUE   = "#4C72B0"
+_SECONDARY_RED  = "#C44E52"
 
 
 def _apply_global_style() -> None:
@@ -251,7 +258,6 @@ def plot_permutation_importance(
     ... )
     """
     from sklearn.inspection import permutation_importance
-    import numpy as np
 
     # ------------------------------------------------------------------
     # 1. Compute permutation importance
@@ -385,15 +391,346 @@ def plot_permutation_importance(
 
 
 # ---------------------------------------------------------------------------
+# LIME Local Explanation
+# ---------------------------------------------------------------------------
+
+def plot_lime_explanation(
+    explainer,
+    instance: "pd.Series | np.ndarray",
+    pipeline,
+    true_label: "str | int" = "N/A",
+    target_labels: dict = None,
+    note_pos: str = "upper right",
+    label_encoders: dict = None,
+    feature_labels: "dict[str, str]" = None,
+    top_k: int = 5,
+    label_pad: int = 15,
+    xlim: tuple = None,
+    tick_size: int = 12,
+    annot_size: int = 12,
+    figsize: "tuple[int, int]" = (8, 5),
+    spanish: bool = True,
+) -> None:
+    """
+    Plot local feature importance for a single instance using LIME.
+
+    Generates a horizontal bar chart where each bar represents the
+    contribution of a feature to the model's prediction for the given
+    instance. Positive weights push the prediction toward the positive
+    class; negative weights push it toward the negative class.
+
+    The predicted class and its probability (displayed between 0 and 1
+    with 3 decimal places) are shown in a metadata box inside the plot.
+
+    Parameters
+    ----------
+    explainer : lime.lime_tabular.LimeTabularExplainer
+        A fitted LIME explainer instance.
+
+    instance : pd.Series or np.ndarray
+        The single observation to explain.
+        If a ``pd.Series``, column names are used for feature lookup and
+        optional inverse-encoding via ``label_encoders``.
+
+    pipeline : sklearn Pipeline or estimator
+        A fitted model (or pipeline) exposing ``predict_proba``.
+
+    true_label : str or int, optional
+        The ground-truth label for this instance (default ``"N/A"``).
+        Displayed in the metadata box for reference.
+
+    target_labels : dict, optional
+        Mapping from raw target values to human-readable strings,
+        e.g. ``{0: "No Disease", 1: "Disease"}``.
+        Applied to ``true_label`` before display.
+
+    note_pos : {"upper right", "upper left"}, optional
+        Position of the metadata annotation box (default ``"upper right"``).
+
+    label_encoders : dict, optional
+        Mapping ``{column_name: LabelEncoder}`` used to inverse-transform
+        integer-encoded categorical columns before passing to ``pipeline``.
+        Only relevant when ``instance`` is a ``pd.Series``.
+
+    feature_labels : dict[str, str], optional
+        Mapping of raw feature name substrings to display-friendly labels,
+        e.g. ``{"age_years": "Age (years)"}``.
+        Applied via substring replacement after pipeline-prefix cleaning.
+
+    top_k : int, optional
+        Number of top features to display (default ``5``).
+
+    label_pad : int, optional
+        Padding for axis labels (default ``15``).
+
+    xlim : tuple, optional
+        Manual limits for the x-axis. If ``None``, limits are set
+        symmetrically based on the maximum absolute weight.
+
+    tick_size : int, optional
+        Font size for axis ticks (default ``12``).
+
+    annot_size : int, optional
+        Font size for bar annotations (default ``12``).
+
+    figsize : tuple[int, int], optional
+        Figure size in inches (default ``(8, 5)``).
+
+    spanish : bool, optional
+        If ``True``, display axis labels and metadata in Spanish.
+        Default is ``True``.
+
+    Notes
+    -----
+    **Colour coding**
+
+    - Blue (``_PRIMARY_BLUE``) → positive weight (supports predicted class)
+    - Red  (``_SECONDARY_RED``) → negative weight (opposes predicted class)
+
+    **Feature name cleaning**
+
+    Pipeline-prefixed names (e.g. ``"preprocessor__age"``) are
+    automatically stripped to their base name (``"age"``).
+    Additional renaming is applied via ``feature_labels``.
+
+    **Predict wrapper**
+
+    An internal ``safe_predict_fn`` handles the conversion from raw
+    NumPy arrays back to the expected DataFrame format, including
+    inverse-encoding of categorical columns, before calling
+    ``pipeline.predict_proba``.
+
+    **Probability display**
+
+    Confidence is shown as a probability in ``[0, 1]`` with 3 decimal
+    places, regardless of the LIME explainer's internal scaling.
+
+    Examples
+    --------
+    >>> plot_lime_explanation(
+    ...     explainer, X_test.iloc[0], pipeline,
+    ...     true_label=y_test.iloc[0],
+    ...     target_labels={0: "Sin EC", 1: "Con EC"},
+    ...     top_k=8,
+    ...     spanish=True
+    ... )
+
+    >>> plot_lime_explanation(
+    ...     explainer, X_test.iloc[5], pipeline,
+    ...     true_label=y_test.iloc[5],
+    ...     note_pos="upper left",
+    ...     xlim=(-0.3, 0.3),
+    ...     tick_size=13,
+    ...     spanish=False
+    ... )
+    """
+
+    # ------------------------------------------------------------------
+    # 0. Safe Predict Wrapper
+    # ------------------------------------------------------------------
+    def safe_predict_fn(X_array):
+        if isinstance(instance, pd.Series):
+            X_df = pd.DataFrame(X_array, columns=instance.index)
+
+            if label_encoders is not None:
+                for col_name, le in label_encoders.items():
+                    if col_name in X_df.columns:
+                        X_df[col_name] = le.inverse_transform(
+                            X_df[col_name].astype(int)
+                        )
+
+            return pipeline.predict_proba(X_df)
+
+        return pipeline.predict_proba(X_array)
+
+    # ------------------------------------------------------------------
+    # 1. Prediction Info & LIME Explanation
+    # ------------------------------------------------------------------
+    inst_input = (
+        instance.values.reshape(1, -1)
+        if isinstance(instance, pd.Series)
+        else instance.reshape(1, -1)
+    )
+
+    probs     = safe_predict_fn(inst_input)[0]
+    pred_idx  = int(np.argmax(probs))
+    pred_conf = float(probs[pred_idx])          # probability in [0, 1]
+
+    class_names = (
+        explainer.class_names
+        if hasattr(explainer, "class_names") and explainer.class_names is not None
+        else [0, 1]
+    )
+
+    pred_label = class_names[pred_idx]
+
+    mapped_true_label = (
+        target_labels.get(true_label, true_label)
+        if target_labels
+        else true_label
+    )
+
+    # LIME explanation
+    exp = explainer.explain_instance(
+        instance if isinstance(instance, np.ndarray) else instance.values,
+        safe_predict_fn,
+        num_features=top_k,
+    )
+
+    lime_list = exp.as_list()
+
+    if not lime_list:
+        msg = (
+            "Aviso: LIME no generó ninguna explicación para esta instancia."
+            if spanish else
+            "Warning: LIME produced no explanation for this instance."
+        )
+        print(msg)
+        return
+
+    df_lime = (
+        pd.DataFrame(lime_list, columns=["Feature", "Weight"])
+        .iloc[::-1]
+        .reset_index(drop=True)
+        .copy()
+    )
+
+    # ------------------------------------------------------------------
+    # 2. Feature Name Cleaning & Custom Labels
+    # ------------------------------------------------------------------
+    df_lime["Feature"] = df_lime["Feature"].apply(
+        lambda x: x.split("__")[-1] if "__" in x else x
+    )
+
+    if feature_labels:
+        for old, new in feature_labels.items():
+            df_lime["Feature"] = df_lime["Feature"].str.replace(
+                old, new, regex=False
+            )
+
+    # ------------------------------------------------------------------
+    # 3. Plot Setup
+    # ------------------------------------------------------------------
+    _apply_global_style()
+
+    colors = [
+        _PRIMARY_BLUE if w > 0 else _SECONDARY_RED
+        for w in df_lime["Weight"]
+    ]
+
+    fig, ax = plt.subplots(figsize=figsize, facecolor="white")
+
+    bars = ax.barh(
+        df_lime["Feature"],
+        df_lime["Weight"],
+        color=colors,
+        edgecolor="black",
+        alpha=0.8
+    )
+
+    # ------------------------------------------------------------------
+    # 4. Axis Labels
+    # ------------------------------------------------------------------
+    ax.set_xlabel(
+        "Peso (Impacto)" if spanish else "Weight (Impact)",
+        fontsize=tick_size + 2,
+        fontweight="bold",
+        labelpad=label_pad
+    )
+
+    ax.set_ylabel(
+        "Atributos" if spanish else "Features",
+        fontsize=tick_size + 2,
+        fontweight="bold",
+        labelpad=label_pad
+    )
+
+    ax.tick_params(axis="both", labelsize=tick_size)
+
+    ax.axvline(0, color="black", linewidth=1.5, alpha=0.7)
+
+    # ------------------------------------------------------------------
+    # 5. Axis Limits
+    # ------------------------------------------------------------------
+    if xlim:
+        ax.set_xlim(xlim)
+    else:
+        m = df_lime["Weight"].abs().max()
+        ax.set_xlim(-m * 1.5, m * 1.5)
+
+    # ------------------------------------------------------------------
+    # 6. Bar Annotations
+    # ------------------------------------------------------------------
+    off = ax.get_xlim()[1] * 0.02
+
+    for i, bar in enumerate(bars):
+        val = df_lime["Weight"].iloc[i]
+
+        ax.text(
+            val + off if val > 0 else val - off,
+            bar.get_y() + bar.get_height() / 2,
+            f"{val:+.3f}",
+            va="center",
+            ha="left" if val > 0 else "right",
+            fontsize=annot_size,
+            fontweight="bold",
+            color="#2c3e50"
+        )
+
+    # ------------------------------------------------------------------
+    # 7. Metadata Box
+    # ------------------------------------------------------------------
+    info = (
+        f"Predicción: {pred_label} ({pred_conf:.3f})\n"
+        f"Etiqueta Real: {mapped_true_label}"
+        if spanish else
+        f"Prediction: {pred_label} ({pred_conf:.3f})\n"
+        f"True Label: {mapped_true_label}"
+    )
+
+    if note_pos == "upper left":
+        x_text, ha_text = 0.03, "left"
+    else:
+        x_text, ha_text = 0.97, "right"
+
+    ax.text(
+        x_text,
+        0.95,
+        info,
+        transform=ax.transAxes,
+        fontsize=tick_size - 1,
+        va="top",
+        ha=ha_text,
+        fontweight="bold",
+        color="#2c3e50",
+        bbox=dict(facecolor="white", alpha=0.0, edgecolor="none")
+    )
+
+    # ------------------------------------------------------------------
+    # 8. Final Styling
+    # ------------------------------------------------------------------
+    ax.xaxis.grid(True, linestyle="--", alpha=0.3)
+    ax.set_axisbelow(True)
+
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(1.2)
+
+    plt.tight_layout()
+    _render_figure(fig, dpi=120)
+
+
+# ---------------------------------------------------------------------------
 # Confusion Matrix
 # ---------------------------------------------------------------------------
+
 def plot_confusion_matrix(
     model,
     X: pd.DataFrame,
     y: pd.Series,
-    labels: list | None = None,
-    title: str | None = None,
-    figsize: tuple[int, int] = (8, 6),
+    labels: "list | None" = None,
+    title: "str | None" = None,
+    figsize: "tuple[int, int]" = (8, 6),
     cmap: str = "Blues",
     label_size: int = 12,
     label_pad: int = 15,
@@ -483,11 +820,11 @@ def plot_confusion_matrix(
         title = "Matriz de Confusión" if spanish else "Confusion Matrix"
 
     xlabel = "Etiqueta Predicha" if spanish else "Predicted Label"
-    ylabel = "Etiqueta Real" if spanish else "True Label"
+    ylabel = "Etiqueta Real"     if spanish else "True Label"
 
-    ax.set_title(title, fontsize=label_size + 2, fontweight="bold", pad=label_pad -2)
-    ax.set_xlabel(xlabel, fontsize=label_size, fontweight="bold", labelpad=label_pad)
-    ax.set_ylabel(ylabel, fontsize=label_size, fontweight="bold", labelpad=label_pad)
+    ax.set_title(title,   fontsize=label_size + 2, fontweight="bold", pad=label_pad - 2)
+    ax.set_xlabel(xlabel, fontsize=label_size,     fontweight="bold", labelpad=label_pad)
+    ax.set_ylabel(ylabel, fontsize=label_size,     fontweight="bold", labelpad=label_pad)
 
     for text in disp.text_.ravel():
         text.set_fontsize(annot_size)
