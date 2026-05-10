@@ -29,14 +29,21 @@ jobs:
 
       - name: Build the book
         run: |
-          # Vamos directo al grano, sin rodeos de carpetas
-          jupyter-book build telco-churn-mlops/telco-churn-mlops/
+          # 1. Buscamos donde está el _config.yml
+          CONFIG_DIR=$(find . -name "_config.yml" -exec dirname {} \; | head -n 1)
+          
+          # 2. Movemos TODO el contenido de esa carpeta a la raíz del servidor
+          # Esto elimina el problema de las carpetas anidadas
+          cp -r $CONFIG_DIR/* .
+          
+          # 3. Construimos el libro aquí mismo en la raíz
+          python -m jupyter_book build .
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Ruta exacta donde tu PC generó los archivos
-          path: "telco-churn-mlops/telco-churn-mlops/_build/html"
+          # Ahora el resultado está garantizado en la raíz
+          path: "_build/html"
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
