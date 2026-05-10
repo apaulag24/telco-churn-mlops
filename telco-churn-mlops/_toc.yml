@@ -3,26 +3,7 @@ root: intro
 chapters:
   - file: notebooks/01_eda_preprocessing
     title: Fase 1. Diagnóstico y Arquitectura de Datos
-    sections:
-      - file: notebooks/01_eda_preprocessing
-        title: Arquitectura del Conjunto de Datos
-      - file: notebooks/01_eda_preprocessing
-        title: Análisis Univariado y Distribuciones
-      - file: notebooks/01_eda_preprocessing
-        title: "Análisis Bivariado: Factores Críticos de Churn"
-
   - file: notebooks/02_model_training
     title: Fase 2. Modelado y Optimización
-    sections:
-      - file: notebooks/02_model_training
-        title: Entrenamiento con GridSearchCV
-      - file: notebooks/02_model_training
-        title: Evaluación de Métricas y Curvas ROC
-
   - file: notebooks/03_interpretability
     title: Fase 3. Explicabilidad y Despliegue
-    sections:
-      - file: notebooks/03_interpretability
-        title: Interpretabilidad con LIME
-      - file: notebooks/03_interpretability
-        title: Arquitectura MLOps y FastAPI

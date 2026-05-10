@@ -23,16 +23,17 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
+          # Ruta corregida: carpeta/archivo
           pip install -r telco-churn-mlops/requirements.txt
 
       - name: Build the book
-        # Como el archivo está en la raíz, le decimos que entre a la carpeta del proyecto
+        # Ruta corregida: construye lo que hay dentro de la subcarpeta
         run: jupyter-book build telco-churn-mlops/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # La salida siempre estará dentro de la carpeta del proyecto
+          # Ruta corregida: donde se genera el HTML
           path: "telco-churn-mlops/_build/html"
 
       - name: Deploy to GitHub Pages
