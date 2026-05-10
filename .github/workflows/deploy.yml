@@ -27,31 +27,17 @@ jobs:
 
       - name: Build the book
         run: |
-          # 1. Creamos un espacio de trabajo limpio
-          mkdir workspace
+          # 1. Quitamos el archivo que causa el conflicto de carpetas
+          rm -f myst.yml
           
-          # 2. Copiamos los archivos esenciales ignorando la carpeta problemática
-          # (Asegúrate de que estos nombres coincidan con los que vimos en tu ls -R)
-          cp _config.yml _toc.yml intro.md requirements.txt workspace/ 2>/dev/null || true
-          cp -r notebooks workspace/ 2>/dev/null || true
-          cp -r data workspace/ 2>/dev/null || true
-          cp -r src workspace/ 2>/dev/null || true
-          
-          # 3. Entramos al espacio limpio y construimos
-          cd workspace
-          # Forzamos el build ignorando cualquier rastro de 'myst.yml'
-          jupyter-book build . --all
-          
-          # 4. Movemos el resultado a una ruta que GitHub pueda ver
-          cd ..
-          mkdir -p final_output
-          cp -r workspace/_build/html/. final_output/
+          # 2. Construimos (vimos que esto ya funciona y lee tus notebooks)
+          jupyter-book build .
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Esta ruta ahora es 100% segura
-          path: "final_output"
+          # El log mostró que se guardó en _build/site
+          path: "_build/site"
 
       - name: Deploy to GitHub Pages
         id: deployment
