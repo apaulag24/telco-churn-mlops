@@ -85,7 +85,7 @@ jobs:
 
           # Instalar requirements.txt del proyecto si existe
           if [ -f "requirements.txt" ]; then
-            echo " Instalando requirements.txt del proyecto..."
+            echo "📦 Instalando requirements.txt del proyecto..."
             pip install -r requirements.txt
           fi
 
