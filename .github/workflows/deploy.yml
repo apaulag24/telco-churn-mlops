@@ -12,6 +12,8 @@ permissions:
 jobs:
   deploy-book:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Con esto quitamos el aviso amarillo
     steps:
       - uses: actions/checkout@v4
 
@@ -27,19 +29,15 @@ jobs:
 
       - name: Build the book
         run: |
-          # 1. Buscamos la carpeta exacta que contiene el _config.yml
+          # Buscamos el archivo de configuración automáticamente
           CONFIG_DIR=$(find . -name "_config.yml" -exec dirname {} \; | head -n 1)
-          echo "Proyecto encontrado en: $CONFIG_DIR"
-          
-          # 2. Construimos el libro directamente ahí
           jupyter-book build "$CONFIG_DIR"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # 3. Buscamos la carpeta de salida generada, no importa la ruta
+          # Buscamos la carpeta de salida automáticamente
           path: "**/_build/html"
 
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
