@@ -1,0 +1,26 @@
+format: jb-book
+root: intro
+chapters:
+  - file: notebooks/EDA_Telco_Churn
+    title: Fase 1. Diagnóstico y Arquitectura de Datos
+    sections:
+      - file: notebooks/EDA_Telco_Churn
+        title: Arquitectura del Conjunto de Datos
+      - file: notebooks/EDA_Telco_Churn
+        title: Análisis Univariado y Distribuciones
+
+  - file: notebooks/2_model_training
+    title: Fase 2. Modelado y Optimización
+    sections:
+      - file: notebooks/2_model_training
+        title: Entrenamiento con GridSearchCV
+      - file: notebooks/2_model_training
+        title: Evaluación de Métricas y Curvas ROC
+
+  - file: notebooks/3_interpretability
+    title: Fase 3. Explicabilidad y Despliegue
+    sections:
+      - file: notebooks/3_interpretability
+        title: Interpretabilidad con LIME
+      - file: notebooks/3_interpretability
+        title: Arquitectura MLOps y FastAPI
