@@ -13,8 +13,7 @@ jobs:
   deploy-book:
     runs-on: ubuntu-latest
     env:
-      # Con esto eliminamos el aviso amarillo de Node.js 20
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
 
@@ -28,18 +27,32 @@ jobs:
           pip install --upgrade pip
           pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
 
-      - name: Build the book
+      - name: Build and Locate
         run: |
-          # Eliminamos el archivo de configuración que genera el conflicto
+          # 1. Limpieza total de archivos de conflicto
           rm -f myst.yml
-          # Construimos el libro en la raíz
-          jupyter-book build .
+          
+          # 2. Construcción forzada
+          jupyter-book build . --all
+          
+          # 3. EL RASTREADOR: Buscamos cualquier archivo 'index.html' generado
+          # y copiamos su carpeta contenedora a una carpeta llamada 'entregable'
+          mkdir -p entregable
+          RUTA_HTML=$(find _build -name "index.html" -exec dirname {} \; | head -n 1)
+          
+          if [ -z "$RUTA_HTML" ]; then
+            echo "ERROR: No se encontró ningún archivo HTML generado."
+            exit 1
+          else
+            echo "¡Lo encontramos en: $RUTA_HTML!"
+            cp -r "$RUTA_HTML"/. entregable/
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Usamos la ruta que el log anterior nos confirmó que existe
-          path: "_build/site"
+          # Esta carpeta la creamos nosotros, no puede fallar
+          path: "entregable"
 
       - name: Deploy to GitHub Pages
         id: deployment
