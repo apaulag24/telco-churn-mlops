@@ -15,28 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
+      - name: Terminal PowerShell (ls -R)
         run: |
-          pip install --upgrade pip
-          pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
-
-      - name: Build the book
-        run: |
-          # Forzamos la construcción en la carpeta interna donde están tus archivos reales
-          # Usamos python -m para evitar que 'myst' interfiera
-          python -m jupyter_book.cli.main build telco-churn-mlops/telco-churn-mlops/
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # Ruta manual exacta al resultado
-          path: "telco-churn-mlops/telco-churn-mlops/_build/html"
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          echo "=== DÓNDE ESTOY PARADO? ==="
+          pwd
+          echo "=== QUÉ HAY EN ESTA CARPETA? ==="
+          ls -F
+          echo "=== MAPA COMPLETO DE ARCHIVOS ==="
+          ls -R
