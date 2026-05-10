@@ -12,8 +12,6 @@ permissions:
 jobs:
   deploy-book:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
 
@@ -29,8 +27,14 @@ jobs:
 
       - name: Build the book
         run: |
-          # Usamos el comando directo de jupyter-book apuntando a la raíz
-          jupyter-book build .
+          # 1. Borramos ese archivo myst.yml que está causando conflictos
+          rm -f myst.yml
+          
+          # 2. Forzamos la construcción total desde cero
+          jupyter-book build . --all
+          
+          # 3. Verificamos físicamente que la carpeta se creó
+          ls -R _build/html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
