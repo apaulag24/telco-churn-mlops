@@ -3,7 +3,9 @@ root: intro
 chapters:
   - file: notebooks/01_eda_preprocessing
     title: Fase 1. Diagnóstico y Arquitectura de Datos
+    
   - file: notebooks/02_model_training
     title: Fase 2. Modelado y Optimización
+    
   - file: notebooks/03_interpretability
     title: Fase 3. Explicabilidad y Despliegue
