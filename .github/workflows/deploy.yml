@@ -22,19 +22,21 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
 
-      - name: Build
+      - name: Build the book
         run: |
-          # Buscamos el lugar exacto del config y construimos solo ahí
-          # Usamos -maxdepth para que no busque infinitamente en subcarpetas
-          CONF=$(find . -maxdepth 3 -name "_config.yml" -exec dirname {} \; | head -n 1)
-          jupyter-book build "$CONF"
+          # Forzamos la construcción en la carpeta interna donde están tus archivos reales
+          # Usamos python -m para evitar que 'myst' interfiera
+          python -m jupyter_book.cli.main build telco-churn-mlops/telco-churn-mlops/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "**/_build/html"
+          # Ruta manual exacta al resultado
+          path: "telco-churn-mlops/telco-churn-mlops/_build/html"
 
-      - name: Deploy
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
