@@ -1,7 +1,5 @@
 # CatBoost logs
 catboost_info/
-*.json
-*.tsv
 
 # Envs
 ML_venv/
@@ -20,9 +18,8 @@ nt.ipynb
 # MyST build outputs
 _build/
 .myst/
-
-
-_build/
 .jupyter_cache/
-__pycache__/
-*.pyc
+
+# Data / resultados intermedios
+*.json
+*.tsv
