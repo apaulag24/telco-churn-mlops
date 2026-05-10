@@ -25,19 +25,22 @@ jobs:
           pip install --upgrade pip
           pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
 
-      - name: Build the book
+      - name: Build
         run: |
-          # Borramos el archivo que causa el conflicto de carpetas
           rm -f myst.yml
-          # Construimos
           jupyter-book build .
+          
+          # Buscamos CUALQUIER carpeta que se llame 'html' o 'site' dentro de _build
+          # y la movemos a una carpeta fija llamada 'publico'
+          mkdir -p publico
+          CONSTRUIDO=$(find _build -type d \( -name "html" -o -name "site" \) | head -n 1)
+          echo "Carpeta encontrada en: $CONSTRUIDO"
+          cp -r $CONSTRUIDO/. publico/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # MyST en 2026 guarda por defecto en esta ruta cuando hay conflictos
-          path: "_build/site"
+          path: "publico"
 
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - name: Deploy
         uses: actions/deploy-pages@v4
