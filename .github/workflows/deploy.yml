@@ -27,20 +27,21 @@ jobs:
           pip install --upgrade pip
           pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
 
-      - name: Build and Upload
+      - name: Build the book
         run: |
-          # 1. Buscamos dónde está el proyecto
+          # Buscamos el proyecto y construimos
           CONFIG_DIR=$(find . -name "_config.yml" -exec dirname {} \; | head -n 1)
-          echo "Construyendo en: $CONFIG_DIR"
+          jupyter-book build "$CONFIG_DIR"
           
-          # 2. Construimos el libro
-          jupyter-book build "$CONFIG_DIR" --all
+          # Movemos el resultado a una carpeta fija para que no falle el Upload
+          mkdir -p final_book
+          cp -r "$CONFIG_DIR/_build/html/." final_book/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Buscamos la carpeta generada directamente
-          path: "**/_build/html"
+          # Usamos la carpeta fija que acabamos de crear
+          path: "final_book"
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
