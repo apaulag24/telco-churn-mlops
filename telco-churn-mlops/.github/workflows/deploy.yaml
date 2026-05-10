@@ -12,6 +12,8 @@ permissions:
 jobs:
   deploy-book:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Con esto eliminamos el warning de Node.js
     steps:
       - uses: actions/checkout@v4
 
@@ -23,17 +25,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          # Ruta corregida: carpeta/archivo
           pip install -r telco-churn-mlops/requirements.txt
 
       - name: Build the book
-        # Ruta corregida: construye lo que hay dentro de la subcarpeta
         run: jupyter-book build telco-churn-mlops/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Ruta corregida: donde se genera el HTML
           path: "telco-churn-mlops/_build/html"
 
       - name: Deploy to GitHub Pages
