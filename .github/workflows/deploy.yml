@@ -27,14 +27,12 @@ jobs:
 
       - name: Build the book
         run: |
-          # 1. Borramos ese archivo myst.yml que está causando conflictos
+          # 1. ELIMINAMOS EL CONFLICTO: Borramos la carpeta que confunde al servidor
+          rm -rf telco-churn-mlops/
           rm -f myst.yml
           
-          # 2. Forzamos la construcción total desde cero
-          jupyter-book build . --all
-          
-          # 3. Verificamos físicamente que la carpeta se creó
-          ls -R _build/html
+          # 2. EJECUCIÓN DIRECTA: Usamos el ejecutable de python para saltar el error EISDIR
+          python -m jupyter_book build . --all
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
