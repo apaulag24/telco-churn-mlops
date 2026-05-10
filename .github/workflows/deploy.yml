@@ -24,16 +24,17 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
-          if [ -f telco-churn-mlops/requirements.txt ]; then pip install -r telco-churn-mlops/requirements.txt; fi
 
       - name: Build the book
+        # Paso clave: Entramos a la carpeta interna antes de construir
         run: |
-          jupyter-book clean telco-churn-mlops/
-          jupyter-book build telco-churn-mlops/
+          cd telco-churn-mlops
+          jupyter-book build .
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          # Buscamos el resultado justo donde se creó
           path: "telco-churn-mlops/_build/html"
 
       - name: Deploy to GitHub Pages
