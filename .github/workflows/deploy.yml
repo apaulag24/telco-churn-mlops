@@ -29,19 +29,14 @@ jobs:
 
       - name: Build the book
         run: |
-          # Buscamos el proyecto y construimos
-          CONFIG_DIR=$(find . -name "_config.yml" -exec dirname {} \; | head -n 1)
-          jupyter-book build "$CONFIG_DIR"
-          
-          # Movemos el resultado a una carpeta fija para que no falle el Upload
-          mkdir -p final_book
-          cp -r "$CONFIG_DIR/_build/html/." final_book/
+          # Vamos directo al grano, sin rodeos de carpetas
+          jupyter-book build telco-churn-mlops/telco-churn-mlops/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Usamos la carpeta fija que acabamos de crear
-          path: "final_book"
+          # Ruta exacta donde tu PC generó los archivos
+          path: "telco-churn-mlops/telco-churn-mlops/_build/html"
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
