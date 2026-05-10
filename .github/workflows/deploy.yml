@@ -29,21 +29,19 @@ jobs:
 
       - name: Build the book
         run: |
-          # 1. Buscamos donde está el _config.yml
-          CONFIG_DIR=$(find . -name "_config.yml" -exec dirname {} \; | head -n 1)
+          # 1. Identificar la carpeta real donde están tus archivos
+          REAL_PATH=$(find . -name "_config.yml" -exec dirname {} \; | head -n 1)
           
-          # 2. Movemos TODO el contenido de esa carpeta a la raíz del servidor
-          # Esto elimina el problema de las carpetas anidadas
-          cp -r $CONFIG_DIR/* .
-          
-          # 3. Construimos el libro aquí mismo en la raíz
-          python -m jupyter_book build .
+          # 2. Correr el build usando el módulo de python directamente
+          # Esto evita que se dispare el comando 'myst' que da el error EISDIR
+          python -m jupyter_book.cli.main build "$REAL_PATH"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Ahora el resultado está garantizado en la raíz
-          path: "_build/html"
+          # Buscamos la carpeta de salida sin importar dónde quedó
+          path: "**/_build/html"
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
