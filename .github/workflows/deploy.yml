@@ -13,7 +13,7 @@ jobs:
   deploy-book:
     runs-on: ubuntu-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Con esto quitamos el aviso amarillo
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
 
@@ -29,15 +29,27 @@ jobs:
 
       - name: Build the book
         run: |
-          # Buscamos el archivo de configuración automáticamente
+          # 1. Encontrar la carpeta real
           CONFIG_DIR=$(find . -name "_config.yml" -exec dirname {} \; | head -n 1)
-          jupyter-book build "$CONFIG_DIR"
+          echo "Ejecutando build en: $CONFIG_DIR"
+          
+          # 2. Forzar el build y capturar el error real
+          jupyter-book build "$CONFIG_DIR" --all
+          
+          # 3. Verificar si la carpeta se creó de verdad
+          if [ -d "$CONFIG_DIR/_build/html" ]; then
+            echo "¡Éxito! Carpeta creada en $CONFIG_DIR/_build/html"
+            # Guardamos la ruta en una variable para el siguiente paso
+            echo "BOOK_PATH=$CONFIG_DIR/_build/html" >> $GITHUB_ENV
+          else
+            echo "ERROR: La carpeta _build/html no existe después del build."
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Buscamos la carpeta de salida automáticamente
-          path: "**/_build/html"
+          path: ${{ env:BOOK_PATH }}
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
