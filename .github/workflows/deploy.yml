@@ -27,28 +27,17 @@ jobs:
 
       - name: Build the book
         run: |
-          # 1. Creamos una carpeta totalmente nueva y vacía
-          mkdir proyecto_limpio
-          
-          # 2. Copiamos SOLO lo necesario a esa carpeta (evitando carpetas repetidas)
-          cp _config.yml _toc.yml intro.md requirements.txt proyecto_limpio/
-          cp -r notebooks/ proyecto_limpio/
-          cp -r data/ proyecto_limpio/
-          
-          # 3. Entramos y construimos desde ahí
-          cd proyecto_limpio
-          jupyter-book build . --all
-          
-          # 4. Movemos el resultado afuera para que sea fácil de encontrar
-          cd ..
-          mkdir -p output
-          cp -r proyecto_limpio/_build/html/* output/
+          # Borramos el archivo que causa el conflicto de carpetas
+          rm -f myst.yml
+          # Construimos
+          jupyter-book build .
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Apuntamos a la carpeta limpia que creamos al final
-          path: "output"
+          # MyST en 2026 guarda por defecto en esta ruta cuando hay conflictos
+          path: "_build/site"
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
