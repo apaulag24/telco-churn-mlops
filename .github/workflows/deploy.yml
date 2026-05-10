@@ -27,20 +27,31 @@ jobs:
 
       - name: Build the book
         run: |
-          # 1. ELIMINAMOS EL CONFLICTO DE NOMBRES
-          # Cambiamos el nombre de la subcarpeta para que no se llame igual que el repo
-          mv telco-churn-mlops carpeta_datos
+          # 1. Creamos un espacio de trabajo limpio
+          mkdir workspace
           
-          # 2. Borramos el archivo que activa a 'myst' para que solo use Jupyter Book
-          rm -f myst.yml
+          # 2. Copiamos los archivos esenciales ignorando la carpeta problemática
+          # (Asegúrate de que estos nombres coincidan con los que vimos en tu ls -R)
+          cp _config.yml _toc.yml intro.md requirements.txt workspace/ 2>/dev/null || true
+          cp -r notebooks workspace/ 2>/dev/null || true
+          cp -r data workspace/ 2>/dev/null || true
+          cp -r src workspace/ 2>/dev/null || true
           
-          # 3. Construimos el libro en la raíz
+          # 3. Entramos al espacio limpio y construimos
+          cd workspace
+          # Forzamos el build ignorando cualquier rastro de 'myst.yml'
           jupyter-book build . --all
+          
+          # 4. Movemos el resultado a una ruta que GitHub pueda ver
+          cd ..
+          mkdir -p final_output
+          cp -r workspace/_build/html/. final_output/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "_build/html"
+          # Esta ruta ahora es 100% segura
+          path: "final_output"
 
       - name: Deploy to GitHub Pages
         id: deployment
