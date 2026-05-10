@@ -12,6 +12,9 @@ permissions:
 jobs:
   deploy-book:
     runs-on: ubuntu-latest
+    env:
+      # Con esto eliminamos el aviso amarillo de Node.js 20
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
     steps:
       - uses: actions/checkout@v4
 
@@ -27,16 +30,15 @@ jobs:
 
       - name: Build the book
         run: |
-          # 1. Quitamos el archivo que causa el conflicto de carpetas
+          # Eliminamos el archivo de configuración que genera el conflicto
           rm -f myst.yml
-          
-          # 2. Construimos (vimos que esto ya funciona y lee tus notebooks)
+          # Construimos el libro en la raíz
           jupyter-book build .
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # El log mostró que se guardó en _build/site
+          # Usamos la ruta que el log anterior nos confirmó que existe
           path: "_build/site"
 
       - name: Deploy to GitHub Pages
