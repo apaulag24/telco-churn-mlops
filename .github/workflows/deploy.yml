@@ -27,18 +27,28 @@ jobs:
 
       - name: Build the book
         run: |
-          # 1. ELIMINAMOS EL CONFLICTO: Borramos la carpeta que confunde al servidor
-          rm -rf telco-churn-mlops/
-          rm -f myst.yml
+          # 1. Creamos una carpeta totalmente nueva y vacía
+          mkdir proyecto_limpio
           
-          # 2. EJECUCIÓN DIRECTA: Usamos el ejecutable de python para saltar el error EISDIR
-          python -m jupyter_book build . --all
+          # 2. Copiamos SOLO lo necesario a esa carpeta (evitando carpetas repetidas)
+          cp _config.yml _toc.yml intro.md requirements.txt proyecto_limpio/
+          cp -r notebooks/ proyecto_limpio/
+          cp -r data/ proyecto_limpio/
+          
+          # 3. Entramos y construimos desde ahí
+          cd proyecto_limpio
+          jupyter-book build . --all
+          
+          # 4. Movemos el resultado afuera para que sea fácil de encontrar
+          cd ..
+          mkdir -p output
+          cp -r proyecto_limpio/_build/html/* output/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "_build/html"
+          # Apuntamos a la carpeta limpia que creamos al final
+          path: "output"
 
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
