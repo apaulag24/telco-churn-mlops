@@ -1,40 +1,155 @@
-name: deploy-book
+name: Deploy Jupyter Book to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-jobs:
-  deploy-book:
-    runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Con esto eliminamos el warning de Node.js
-    steps:
-      - uses: actions/checkout@v4
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
-      - name: Set up Python
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # -------------------------------------------------------
+      # 1. Neutralizar myst.yml para forzar jupyter-book
+      #    (myst-cli se activa si detecta este archivo)
+      # -------------------------------------------------------
+      - name: Eliminar myst.yml si existe
+        run: |
+          if [ -f "myst.yml" ]; then
+            echo "  Encontrado myst.yml — eliminando para evitar conflicto con jupyter-book"
+            rm -f myst.yml
+          fi
+
+      # -------------------------------------------------------
+      # 2. Resolver el problema EISDIR:
+      #    La subcarpeta con el mismo nombre del repo hace que
+      #    jupyter-book intente leerla como archivo.
+      #    La movemos fuera del working dir temporalmente.
+      # -------------------------------------------------------
+      - name: Resolver conflicto de subcarpeta duplicada (EISDIR)
+        run: |
+          REPO_NAME=$(basename "$GITHUB_REPOSITORY")
+          if [ -d "$REPO_NAME" ]; then
+            echo "  Subcarpeta '$REPO_NAME/' detectada — es un duplicado del repo."
+            echo "    Moviéndola a /tmp para evitar el error EISDIR..."
+            mv "$REPO_NAME" /tmp/"$REPO_NAME"_backup
+            echo "  Subcarpeta movida exitosamente."
+          else
+            echo "  No se encontró subcarpeta duplicada. Continuando."
+          fi
+
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install dependencies
+      # -------------------------------------------------------
+      # 3. Instalar dependencias del proyecto + jupyter-book
+      # -------------------------------------------------------
+      - name: Instalar dependencias
         run: |
           pip install --upgrade pip
-          pip install -r telco-churn-mlops/requirements.txt
+          pip install \
+            jupyter-book \
+            myst-nb \
+            myst-parser \
+            catboost \
+            xgboost \
+            scikit-learn \
+            pandas \
+            numpy \
+            matplotlib \
+            seaborn \
+            plotly \
+            imbalanced-learn \
+            shap \
+            ipykernel \
+            nbformat \
+            nbconvert
 
-      - name: Build the book
-        run: jupyter-book build telco-churn-mlops/
+          # Instalar requirements.txt del proyecto si existe
+          if [ -f "requirements.txt" ]; then
+            echo " Instalando requirements.txt del proyecto..."
+            pip install -r requirements.txt
+          fi
+
+      # -------------------------------------------------------
+      # 4. Registrar kernel de Jupyter
+      # -------------------------------------------------------
+      - name: Registrar kernel Python
+        run: |
+          python -m ipykernel install --user --name python3 --display-name "Python 3"
+
+      # -------------------------------------------------------
+      # 5. Construir el libro
+      # -------------------------------------------------------
+      - name: Construir Jupyter Book
+        run: |
+          echo "🔨 Iniciando construcción de Jupyter Book..."
+
+          # Ejecutar jupyter-book build con ejecución forzada de notebooks
+          jupyter-book build . \
+            --builder html \
+            2>&1 | tee /tmp/jb_build.log
+
+          echo "--- Log completo ---"
+          cat /tmp/jb_build.log
+
+      # -------------------------------------------------------
+      # 6. Verificar que la carpeta de salida existe
+      #    jupyter-book siempre usa _build/html
+      # -------------------------------------------------------
+      - name: Verificar salida del build
+        run: |
+          if [ -d "_build/html" ]; then
+            echo " Carpeta _build/html encontrada."
+            echo "   Contenido:"
+            ls -la _build/html/
+          else
+            echo " ERROR: No se encontró _build/html"
+            echo ""
+            echo "Contenido de _build/ (si existe):"
+            ls -la _build/ 2>/dev/null || echo "  (carpeta _build/ vacía o inexistente)"
+            echo ""
+            echo "Últimas líneas del log de construcción:"
+            tail -50 /tmp/jb_build.log
+            exit 1
+          fi
+
+      # -------------------------------------------------------
+      # 7. Configurar GitHub Pages y subir artefacto
+      # -------------------------------------------------------
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "telco-churn-mlops/_build/html"
+          path: "_build/html"
 
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
