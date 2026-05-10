@@ -30,10 +30,9 @@ jobs:
           echo "--- EXPLORANDO ESTRUCTURA ---"
           ls -R
           echo "-----------------------------"
-          # Intentamos entrar a la carpeta que debería tener el config
+          # Este bloque busca la carpeta correcta automáticamente
           if [ -d "telco-churn-mlops" ]; then
             cd telco-churn-mlops
-            # Si hay OTRA carpeta adentro con el mismo nombre, entramos
             if [ -d "telco-churn-mlops" ]; then cd telco-churn-mlops; fi
           fi
           jupyter-book build .
@@ -41,7 +40,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Buscamos la carpeta _build donde sea que haya quedado
+          # El truco: buscar en cualquier carpeta el resultado
           path: "**/_build/html"
 
       - name: Deploy to GitHub Pages
