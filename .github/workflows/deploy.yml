@@ -25,22 +25,23 @@ jobs:
           pip install --upgrade pip
           pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
 
-      - name: Build
+      - name: Build the book
         run: |
-          rm -f myst.yml
-          jupyter-book build .
+          # 1. ELIMINAMOS EL CONFLICTO DE NOMBRES
+          # Cambiamos el nombre de la subcarpeta para que no se llame igual que el repo
+          mv telco-churn-mlops carpeta_datos
           
-          # Buscamos CUALQUIER carpeta que se llame 'html' o 'site' dentro de _build
-          # y la movemos a una carpeta fija llamada 'publico'
-          mkdir -p publico
-          CONSTRUIDO=$(find _build -type d \( -name "html" -o -name "site" \) | head -n 1)
-          echo "Carpeta encontrada en: $CONSTRUIDO"
-          cp -r $CONSTRUIDO/. publico/
+          # 2. Borramos el archivo que activa a 'myst' para que solo use Jupyter Book
+          rm -f myst.yml
+          
+          # 3. Construimos el libro en la raíz
+          jupyter-book build . --all
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "publico"
+          path: "_build/html"
 
-      - name: Deploy
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
