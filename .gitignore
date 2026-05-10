@@ -16,3 +16,8 @@ __pycache__/
 .ipynb_checkpoints/
 Untitled*.ipynb
 nt.ipynb
+
+# MyST build outputs
+_build/
+.myst/
+

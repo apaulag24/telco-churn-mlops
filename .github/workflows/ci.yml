@@ -22,9 +22,7 @@ jobs:
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
-          # Usamos el requirements de la raíz según tu Dockerfile
-          pip install -r requirements.txt
-          # Instalamos herramientas de testing y calidad
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install flake8 pytest httpx
 
       - name: Ejecutar Linter (Estilo de código)
@@ -32,5 +30,4 @@ jobs:
 
       - name: Ejecutar Pruebas Unitarias
         run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)
           python -m pytest tests/

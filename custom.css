@@ -32,7 +32,7 @@ span.text-md.sm\:text-xl.tracking-tight.sm\:mr-5 {
 }
 
 span.text-md.sm\:text-xl.tracking-tight.sm\:mr-5::after {
-  content: "Clasificación de Riesgo Cardiovascular";
+  content: "Clasificación de Abandono de Clientes";
   font-size: 1.1rem !important;
   font-weight: 600;
   letter-spacing: -0.025em;

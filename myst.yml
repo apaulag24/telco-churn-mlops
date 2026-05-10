@@ -3,10 +3,7 @@ version: 1
 
 project:
   id: 91927bf2-abc1-48c5-8e0c-6653e3b5da54
-  title: "Clasificación de Riesgo Cardiovascular"
-  # Agregamos la referencia global a tu archivo de bibliografía
-  # bibliography:
-    # - references.bib
+  title: "Clasificación de Abandono de Clientes"
   
   authors:
     - name:
@@ -47,15 +44,13 @@ project:
     - app/**
     - data/**
     - docker/**
-    - k8s/**
     - .github/**
     - tests/**
-    - monitoring/**
     - .ruff_cache/**
 
   toc:
-    # - file: README.md
-      #title: "Introducción"
+    - file: README.md
+      title: "Introducción"
     # - file: "notebooks/01_EDA_y_Diagnóstico_de_Datos.ipynb"
       #title: "Análisis Exploratorio"
     - file: "notebooks/02_model_training.ipynb"
@@ -65,9 +60,6 @@ project:
 
 site:
   template: book-theme
-  # github: https://github.com/cjarango/Cardiovascular-Risk-MLOps
+  github: https://github.com/apaulag24/telco-churn-mlops.git
   options:
     style: custom.css
-    # FIX para Plotly: Carga la librería en el HEAD de todas las páginas
-    head_scripts:
-      - https://cdn.plot.ly/plotly-latest.min.js
