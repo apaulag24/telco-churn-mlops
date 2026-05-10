@@ -25,22 +25,19 @@ jobs:
           pip install --upgrade pip
           pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
 
-      - name: Diagnostic & Build
+      - name: Build the book
         run: |
-          echo "--- EXPLORANDO ESTRUCTURA ---"
-          ls -R
-          echo "-----------------------------"
-          # Este bloque busca la carpeta correcta automáticamente
-          if [ -d "telco-churn-mlops" ]; then
-            cd telco-churn-mlops
-            if [ -d "telco-churn-mlops" ]; then cd telco-churn-mlops; fi
-          fi
-          jupyter-book build .
+          # 1. Buscamos la carpeta exacta que contiene el _config.yml
+          CONFIG_DIR=$(find . -name "_config.yml" -exec dirname {} \; | head -n 1)
+          echo "Proyecto encontrado en: $CONFIG_DIR"
+          
+          # 2. Construimos el libro directamente ahí
+          jupyter-book build "$CONFIG_DIR"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # El truco: buscar en cualquier carpeta el resultado
+          # 3. Buscamos la carpeta de salida generada, no importa la ruta
           path: "**/_build/html"
 
       - name: Deploy to GitHub Pages
