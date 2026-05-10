@@ -23,10 +23,13 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r telco-churn-mlops/requirements.txt
+          pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
+          if [ -f telco-churn-mlops/requirements.txt ]; then pip install -r telco-churn-mlops/requirements.txt; fi
 
       - name: Build the book
-        run: jupyter-book build telco-churn-mlops/
+        run: |
+          jupyter-book clean telco-churn-mlops/
+          jupyter-book build telco-churn-mlops/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
