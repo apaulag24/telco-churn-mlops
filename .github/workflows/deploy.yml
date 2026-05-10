@@ -12,14 +12,33 @@ permissions:
 jobs:
   deploy-book:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
 
-      - name: Terminal PowerShell (ls -R)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
         run: |
-          echo "=== DÓNDE ESTOY PARADO? ==="
-          pwd
-          echo "=== QUÉ HAY EN ESTA CARPETA? ==="
-          ls -F
-          echo "=== MAPA COMPLETO DE ARCHIVOS ==="
-          ls -R
+          pip install --upgrade pip
+          pip install jupyter-book myst-nb pandas numpy matplotlib seaborn scikit-learn xgboost catboost lightgbm pyarrow fastparquet
+
+      - name: Build the book
+        run: |
+          # Como vimos en el mapa, el proyecto está en la raíz (.)
+          # Usamos python -m para mayor seguridad
+          python -m jupyter_book.cli.main build .
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Al estar en la raíz, la carpeta de salida es directa
+          path: "_build/html"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
