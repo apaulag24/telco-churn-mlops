@@ -1,13 +1,12 @@
 # Configuration for Telco Customer Churn · MLOps
 title: Telco Customer Churn · MLOps
 author: Juan Camilo Mendoza Arango, Miguel Ángel Pérez Vargas y Paula Andrea Gómez Vargas
-#logo:  ""  
 
 # 1. Configuración de Ejecución
 execute:
-  execute_notebooks: "off"  # Mantenlo en "off" si ya corriste el notebook y guardaste los outputs (gráficos)
+  execute_notebooks: "off"
 
-# 2. Extensiones de Markdown (Muy importante para la estética)
+# 2. Extensiones de Markdown
 parse:
   myst_enable_extensions:
     - colon_fence
@@ -21,12 +20,11 @@ html:
   use_repository_button: true
   use_download_button: true
   home_page_in_toc: true
-  extra_navbar: |
-    <div style="padding: 10px; font-size: 12px; color: #00D1FF;">
-      Universidad del Norte<br>Ingeniería de Sistemas
-    </div>
+  extra_navbar: "Universidad del Norte · Ingeniería de Sistemas"
 
 # 4. Enlace al repositorio
 repository:
   url: https://github.com/apaulag24/telco-churn-mlops
   branch: main
+execute:
+  execute_notebooks: "off"  # Esto evita que el servidor intente correr el código
