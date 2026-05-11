@@ -21,6 +21,8 @@ html:
   use_repository_button: true
   use_download_button: true
   home_page_in_toc: true
+  extra_css:
+    - custom.css
   extra_navbar: |
     <div style="padding: 10px; font-size: 12px; color: #00D1FF;">
       Universidad del Norte<br>Ingeniería de Sistemas
